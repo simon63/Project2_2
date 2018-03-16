@@ -1,0 +1,88 @@
+---
+title: "DATA 607 - Project 2.2"
+author: "Simon63"
+date: "March 12, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r lib, warning=FALSE, message=FALSE}
+# install.packages("tidyverse")
+library(readxl)
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+```
+
+
+Data Posted by Brian Liles  
+NYC COMPSTAT Data  
+http://www1.nyc.gov/site/nypd/stats/crime-statistics/historical.page  
+
+Downloaded XLS file for "Citywide Non-Seven Major Felony Offenses 2000-2017"
+
+Here's how the data looks initially:
+image: ![](C:/Users/simus/Documents/R/Project 2/non-seven-major-felony-offenses-2000-2017.PNG)
+
+Read XLS file, rows 5 through 13
+```{r load_data}
+# Get path [in platform independent way using file.path() function]
+path <- file.path("~", "R", "Project 2", "non-seven-major-felony-offenses-2000-2017.xls")
+df <-  read_xls(path, sheet = 1, cell_rows(5:13)) %>% tbl_df()
+df
+```
+
+Perform data transformation, suggested by Brian: *"At first glance I would use the gather function and condense the table using the following headers: offense, year, and count instead of the wide format."*  
+```{r tidy_data}
+dFelon <- gather(df, "YEAR", "COUNT", 2:(2+(2017-2000)), convert = T) %>% tbl_df()
+head(dFelon)
+```
+
+```{r plot_data}
+ggplot(data = dFelon, mapping = aes(x = YEAR, y = COUNT, label = OFFENSE, color = OFFENSE, shape = OFFENSE)) + 
+  labs(x = "Years", y ="Counts") +
+  geom_point() +
+  geom_line()
+  #geom_smooth()
+  #facet_wrap(~ OFFENSE)
+  #geom_line(mapping = aes(color = OFFENSE))
+  #facet_grid(OFFENSE ~ .)
+  #geom_text(aes(label = COUNT), vjust = 0, nudge_y = 1, color = "red") +
+```
+
+```{r}
+dFelon %>% group_by(OFFENSE) %>% summarize(MEAN = mean(COUNT)) %>% arrange(desc(MEAN)) %>% mutate(RANK = row_number())
+```
+
+```{r}
+dFelon <- left_join(dFelon, dFelon %>% group_by(OFFENSE) %>% summarize(MEAN = mean(COUNT)) %>% arrange(desc(MEAN)) %>% mutate(RANK = row_number()), by = "OFFENSE") %>% arrange(YEAR, RANK)
+head(dFelon, 10)
+```
+
+```{r }
+ggplot(data = filter(dFelon, between(RANK, 1, 2)), mapping = aes(x = YEAR, y = COUNT, label = OFFENSE, color = OFFENSE, shape = OFFENSE)) + 
+  labs(x = "Years", y ="Counts") +
+  geom_point() +
+  #geom_line() +
+  geom_smooth()
+```
+
+```{r }
+ggplot(data = filter(dFelon, between(RANK, 3, 5)), mapping = aes(x = YEAR, y = COUNT, label = OFFENSE, color = OFFENSE, shape = OFFENSE)) + 
+  labs(x = "Years", y ="Counts") +
+  geom_point() +
+  #geom_line() +
+  geom_smooth()
+```
+
+```{r }
+ggplot(data = filter(dFelon, between(RANK, 6, 8)), mapping = aes(x = YEAR, y = COUNT, label = OFFENSE, color = OFFENSE, shape = OFFENSE)) + 
+  labs(x = "Years", y ="Counts") +
+  geom_point() +
+  #geom_line() +
+  geom_smooth()
+```
